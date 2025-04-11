@@ -22,6 +22,11 @@ class TestApplication {
     }
 
     public async init() {
+        if (appConfig?.applicationId === "applicationId" || appConfig?.secretKey === "secretKey") {
+            window.alert("No application ID or secret key are set for this application ! Refer to the README file");
+            return;
+        }
+
         this.rainbowSDK = RainbowSDK.create({
             appConfig: {
                 server: appConfig.server,
