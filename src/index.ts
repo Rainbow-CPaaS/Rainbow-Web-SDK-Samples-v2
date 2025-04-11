@@ -118,6 +118,12 @@ class TestApplication {
         const logoutButton = document.getElementById('logout-btn');
         logoutButton.addEventListener('click', async () => {
             await this.rainbowSDK.connectionService.logout();
+            /** should be managed by the events received here but I take a shortcut
+             * this.rainbowSDK.connectionService.subscribe((event: RBEvent) =>
+                this.connectionStateChangeHandler(event), ConnectionServiceEvents.RAINBOW_ON_CONNECTION_STATE_CHANGE);
+             * 
+            */
+
             this.connectedUser = undefined;
             this.managePage();
         });
