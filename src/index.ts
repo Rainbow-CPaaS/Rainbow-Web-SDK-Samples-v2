@@ -161,6 +161,10 @@ class TestApplication {
         });
     }
 
+    /**
+     * NOTE: You should test the capability if we can actually call the user.
+     * 
+     */
     public async makeCall(user: User) {
         const searchResultsContainer = document.getElementById('search-results');
         searchResultsContainer.innerHTML = '';
@@ -174,7 +178,11 @@ class TestApplication {
         }
     }
 
-    //manage all calls here
+
+    /**
+     * Here we manage ALL calls. It's pretty simple : If there's a new call (incoming or outgoing), we'll have an event;
+     * If the call is removed (ended/rejected/whatever reason): there's event;
+     */
     private manageCalls() {
         this.conversationCallSubscription = this.rainbowSDK.conversationService?.subscribe((event: RBEvent<ConversationServiceEvents>) => {
             try {
@@ -200,6 +208,11 @@ class TestApplication {
         ConversationServiceEvents.ON_REMOVE_CALL_IN_CONVERSATION]);
     }
 
+    /**
+     * 
+     * We build the call cell for the new call. The available buttons should be taken from the CALL capabilities to be sure what actions
+     * are allowed for the call, like taking it, releasing, mute, hold, etc etc
+     */
     private onCallConversationCreated(conversation: Conversation) {
         //we've new conversation call, build the card and list to updates on the call so that we can update the buttons / status accordingly
         const callCardsContainer: any = document.getElementById('call-cards-container');
@@ -213,30 +226,99 @@ class TestApplication {
             <img src="${conversation.call?.contact?.avatar?.src}" alt="Avatar" />
             <h4>${conversation.call?.contact?.displayName}</h4>
             <p class="call-status">${conversation.call?.callStatus}</p>
-            <button class="call-end-btn">End</button>
+            <button class="call-btn hidden">Answer</button>
+            <button class="call-end-btn hidden">End</button>
             <button class="mute-btn hidden">Mute</button>
             <button class="unmute-btn hidden">Unmute</button>
         `;
 
         callCardsContainer.appendChild(cardElement);
 
+        const answerButton = cardElement.querySelector('.call-btn');
+        if (answerButton) {
+            answerButton.addEventListener('click', () => this.answerCall(conversation.call));
+        }
+
         const callButton = cardElement.querySelector('.call-end-btn');
         if (callButton) {
             callButton.addEventListener('click', () => this.releaseCall(conversation.call));
         }
 
-        //add listeners for this call
+        //add mute/unmute actions, but only show the buttons if the call capability is TRUE for this action
+        const muteButton = cardElement.querySelector('.mute-btn');
+        if (muteButton) {
+            muteButton.addEventListener('click', () => this.muteCall(conversation.call));
+        }
+
+        const unmuteButton = cardElement.querySelector('.unmute-btn');
+        if (unmuteButton) {
+            unmuteButton.addEventListener('click', () => this.unmuteCall(conversation.call));
+        }
+
+        //update the call buttons based on the capabilities
+        this.manageCallButtons(conversation.call);
+
+        //add listeners for this call so that I can remove it after the call is ended
+        //there're 100 ways to do this, so you can do it as you want, just remember to unsubscribe at the end of the call
+        //as this might lead to memory leak.
         this.calls[conversation.call.id] = {}
 
         this.calls[conversation.call.id].subcription = conversation.call.subscribe((event: RBEvent<CallEvents>) => {
             switch (event.name) {
-                case CallEvents.ON_CALL_STATUS_CHANGE: break;
-                case CallEvents.ON_CALL_CAPABILITIES_UPDATED: break;
-                case CallEvents.ON_CALL_MEDIA_UPDATED: break;
-                case CallEvents.ON_CALL_MUTE_CHANGE: break;
+                case CallEvents.ON_CALL_STATUS_CHANGE:
+                case CallEvents.ON_CALL_CAPABILITIES_UPDATED:
+                case CallEvents.ON_CALL_MEDIA_UPDATED:
+                case CallEvents.ON_CALL_MUTE_CHANGE:
+                    //to make it simple, I'll manage the call status and the call buttons at the same place; For more "fine" management, each event 
+                    //contains information that will allow to update any part of the UI / actions separately, if needed.
+                    this.manageCallButtons(conversation.call);
+                    break;
                 default: break;
             }
         });
+    }
+
+    private manageCallButtons(call: Call) {
+        //for each capability, set the visbility of the button to TRUE or FALSE
+        //get the call card by it's id
+        //it,s a workaround to use an unique ID;
+        const cardElement = document.getElementById(call["id"]);
+
+        //update the call status
+        const callStatus = cardElement.querySelector('.call-status');
+        callStatus.innerHTML = call.callStatus;
+
+        const answerButton = cardElement.querySelector('.call-btn');
+        if (answerButton) {
+            //if capability answer is true, show button, otherwise hide it
+            answerButton.classList.toggle("hidden", !call.capabilities.answer);
+        }
+
+        const callButton = cardElement.querySelector('.call-end-btn');
+        if (callButton) {
+            callButton.classList.toggle("hidden", !call.capabilities.release);
+        }
+
+        //add mute/unmute actions, but only show the buttons if the call capability is TRUE for this action
+        const muteButton = cardElement.querySelector('.mute-btn');
+        if (muteButton) {
+            muteButton.classList.toggle("hidden", !call.capabilities.mute);
+        }
+
+        const unmuteButton = cardElement.querySelector('.unmute-btn');
+        if (unmuteButton) {
+            unmuteButton.classList.toggle("hidden", !call.capabilities.unmute);
+        }
+
+        //do for all buttons that we want to manage
+    }
+
+    private muteCall(call: Call) {
+        call.mute();
+    }
+
+    private unmuteCall(call: Call) {
+        call.unmute();
     }
 
     private async releaseCall(call: Call) {
@@ -249,6 +331,17 @@ class TestApplication {
         }
     }
 
+    private async answerCall(call: Call) {
+        //answer call
+        try {
+            await call.answer();
+        }
+        catch (error) {
+            //manage error
+        }
+    }
+
+    //remove the call as it's ended
     private onCallConversationRemoved(conversation) {
         //remove conversation call from the UI, as call is ended
         const cardElement = document.getElementById(conversation.call.id);
