@@ -2,10 +2,10 @@ import { Call, CallEvents, CallsPlugin, ConnectedUser, ConnectionServiceEvents, 
 
 // Personnal configuration for the SDK APP; If you need help, please read the starting guides on how to obtain the key / secret
 // and update the appConfig in the config file.
-// import { appConfig } from './config/config';
+import { appConfig } from './config/config';
 
 
-import { appConfig } from './config/myConfig';
+// import { appConfig } from './config/myConfig';
 
 class TestApplication {
     protected rainbowSDK: RainbowSDK;
