@@ -19,7 +19,7 @@ const config = [
                 sourceMap: true
             }),
             copy({
-                targets: [{ src: ['./src/index.html'], dest: './dist' }]
+                targets: [{ src: ['./src/index.html', './src/style.css'], dest: './dist' }]
             })
         ]
     }
