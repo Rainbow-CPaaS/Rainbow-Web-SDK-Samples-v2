@@ -2,7 +2,7 @@
 
 This project is build following the starting guides available in on the public Rainbow Developpers website (https://developers.openrainbow.com/)
 
-The idea is to have a quick starting app written in TypeScript (no framework) to show some basic implementations of the APIs that are avaialbe in the SDK Web (available on npm, "rainbow-web-sdk").
+The idea is to have a quick starting app written in TypeScript (no framework) to show some basic implementations of the APIs **related to call management** that are avaialbe in the SDK Web (available on npm, "rainbow-web-sdk").
 
 **I strongly advice you to use any modern framework for your application, as the code will be 3x easier to write and maintain** 
 
@@ -24,3 +24,13 @@ Now you've the project available on your localhost.
 
 **In order to know how to create your test app and obtain the application ID, please refer to the public website of Rainbow Developpers**
 
+
+What you will find in this Sample app:
+1. Simple login page
+2. Search for Rainbow users
+3. Make VoIP call to a given RB User
+4. Make PBX call to a given number
+5. Manage incoming calls to the connected user (both PXB or VoIP)
+6. Simple call actions, like mute / unmute / hold / retrieve
+
+Basically a simple *softphone app* 
