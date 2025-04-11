@@ -243,6 +243,24 @@ button {
     background-color: #117a8b;
 }
 
+.hold-btn {
+    background-color: #9d4c05;
+    color: white;
+}
+
+.hold-btn:hover {
+    background-color: #ff8c00;
+}
+
+.unhold-btn {
+    background-color: #b1ba00;
+    color: white;
+}
+
+.unhold-btn:hover {
+    background-color: #9bc600;
+}
+
 /* Button Hidden Style */
 .hidden {
     display: none;

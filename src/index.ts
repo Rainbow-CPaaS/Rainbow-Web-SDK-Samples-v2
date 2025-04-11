@@ -159,6 +159,21 @@ class TestApplication {
                 }
             });
         });
+
+        const callQueryInput: any = document.getElementById('call-query');
+        const callButton = document.getElementById('call-number-btn');
+
+        // Handle call number functionality
+
+        //just a demo on how to make PBX calls, as the management is quite the same as any VoIP call;
+        //the real implementation will need to take care of much more things, like if the user can make PBX calls (configuration)
+        //if the capability to make a call is true etc etc; But the basic case is like this and it will work if the user is correctly configured.
+        callButton.addEventListener('click', async () => {
+            const numberToCall = callQueryInput.value.trim();
+            if (numberToCall) {
+                this.rainbowSDK.callService.makePhoneCall(numberToCall);
+            }
+        });
     }
 
     /**
@@ -219,7 +234,7 @@ class TestApplication {
 
         const cardElement = document.createElement('div');
         //give ID to the card
-        cardElement.id = conversation.call.id;
+        cardElement.id = conversation.id;
         cardElement.classList.add('call-card');
 
         cardElement.innerHTML = `
@@ -230,6 +245,8 @@ class TestApplication {
             <button class="call-end-btn hidden">End</button>
             <button class="mute-btn hidden">Mute</button>
             <button class="unmute-btn hidden">Unmute</button>
+            <button class="hold-btn hidden">Hold</button>
+            <button class="unhold-btn hidden">Retrieve</button>
         `;
 
         callCardsContainer.appendChild(cardElement);
@@ -255,15 +272,25 @@ class TestApplication {
             unmuteButton.addEventListener('click', () => this.unmuteCall(conversation.call));
         }
 
+        const holdButton = cardElement.querySelector('.hold-btn');
+        if (holdButton) {
+            holdButton.addEventListener('click', () => this.holdCall(conversation.call));
+        }
+
+        const retrieveButton = cardElement.querySelector('.unhold-btn');
+        if (retrieveButton) {
+            retrieveButton.addEventListener('click', () => this.retrieveCall(conversation.call));
+        }
+
         //update the call buttons based on the capabilities
-        this.manageCallButtons(conversation.call);
+        this.manageCallButtons(conversation);
 
         //add listeners for this call so that I can remove it after the call is ended
         //there're 100 ways to do this, so you can do it as you want, just remember to unsubscribe at the end of the call
         //as this might lead to memory leak.
-        this.calls[conversation.call.id] = {}
+        this.calls[conversation.id] = {}
 
-        this.calls[conversation.call.id].subcription = conversation.call.subscribe((event: RBEvent<CallEvents>) => {
+        this.calls[conversation.id].subcription = conversation.call.subscribe((event: RBEvent<CallEvents>) => {
             switch (event.name) {
                 case CallEvents.ON_CALL_STATUS_CHANGE:
                 case CallEvents.ON_CALL_CAPABILITIES_UPDATED:
@@ -271,18 +298,24 @@ class TestApplication {
                 case CallEvents.ON_CALL_MUTE_CHANGE:
                     //to make it simple, I'll manage the call status and the call buttons at the same place; For more "fine" management, each event 
                     //contains information that will allow to update any part of the UI / actions separately, if needed.
-                    this.manageCallButtons(conversation.call);
+                    this.manageCallButtons(conversation);
                     break;
                 default: break;
             }
         });
     }
 
-    private manageCallButtons(call: Call) {
+    private manageCallButtons(conversation: Conversation) {
         //for each capability, set the visbility of the button to TRUE or FALSE
         //get the call card by it's id
         //it,s a workaround to use an unique ID;
-        const cardElement = document.getElementById(call["id"]);
+        const call = conversation.call;
+        if (!call) {
+            //call is ended and removed
+            return;
+        }
+
+        const cardElement = document.getElementById(conversation["id"]);
 
         //update the call status
         const callStatus = cardElement.querySelector('.call-status');
@@ -310,13 +343,30 @@ class TestApplication {
             unmuteButton.classList.toggle("hidden", !call.capabilities.unmute);
         }
 
+        //hold / retrieve
+
+        const holdButton = cardElement.querySelector('.hold-btn');
+        if (holdButton) {
+            holdButton.classList.toggle("hidden", !call.capabilities.hold);
+        }
+
+        const retrieveButton = cardElement.querySelector('.unhold-btn');
+        if (retrieveButton) {
+            retrieveButton.classList.toggle("hidden", !call.capabilities.retrieve);
+        }
+
         //do for all buttons that we want to manage
     }
 
     private muteCall(call: Call) {
         call.mute();
     }
-
+    private holdCall(call: Call) {
+        call.hold();
+    }
+    private retrieveCall(call: Call) {
+        call.retrieve();
+    }
     private unmuteCall(call: Call) {
         call.unmute();
     }
@@ -344,13 +394,13 @@ class TestApplication {
     //remove the call as it's ended
     private onCallConversationRemoved(conversation) {
         //remove conversation call from the UI, as call is ended
-        const cardElement = document.getElementById(conversation.call.id);
+        const cardElement = document.getElementById(conversation.id);
 
         //remove the card
         cardElement?.remove();
         //remove subscriptions
-        this.calls[conversation.call.id]?.subcription?.unsubscribe();
-        delete this.calls[conversation.call.id];
+        this.calls[conversation.id]?.subcription?.unsubscribe();
+        delete this.calls[conversation.id];
 
     }
 }
