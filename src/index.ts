@@ -50,8 +50,13 @@ class TestApplication {
         //hide loading spinner
         document.getElementById('loading-spinner').style.display = 'none';
 
+        this.managePage();
+    }
+
+    private managePage() {
         if (!this.connectedUser) {
             document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('mainPage').style.display = 'none';
             //show your login page here
             this.manageLoginForm();
         }
@@ -109,6 +114,13 @@ class TestApplication {
         const usernameElement = document.getElementById('username');
         const companyElement = document.getElementById('company');
         const avatarElement: any = document.getElementById('avatar');
+
+        const logoutButton = document.getElementById('logout-btn');
+        logoutButton.addEventListener('click', async () => {
+            await this.rainbowSDK.connectionService.logout();
+            this.connectedUser = undefined;
+            this.managePage();
+        });
 
         usernameElement.textContent = this.connectedUser.displayName;
         companyElement.textContent = this.connectedUser.company?.name;
